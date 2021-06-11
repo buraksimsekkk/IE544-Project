@@ -37,11 +37,11 @@ score(dag1, data1)
 
 
 
-dag2 = tabu(data1,blacklist= blist)
+dag2 = tabu(data1,whitelist = wlist , blacklist= blist)
 graphviz.plot(dag2)
 score(dag2, data1)
 
 
 
 
-#whitelist = wlist,
+
