@@ -22,23 +22,23 @@ train$price_gap_ratio<- cut(train$price_gap_ratio,
                        right = TRUE )
 
 train$sid_pos_fb<- cut(train$sid_pos_fb,
-                            breaks = c(0, 7, 8, 9, 9.2, 9.4, 9.6, 9.7, 9.8, 9.9, 10 ), 
+                            breaks = c(0, 7, 8, 9,  9.4, 9.7,  10 ), 
                             include.lowest = TRUE,
                             right = TRUE )
 
 
+colnames(train)
 
+wlist <- data.frame(from = c("price_gap_ratio" , "is_Amazon" , "rank" , "sid_pos_fb" ,"is_Amazon"), 
+                      to = c( "bbox" ,"bbox" ,"bbox","bbox", "sid_pos_fb"          )   )
 
-wlist <- data.frame(from = c( "price_gap_ratio","is_Amazon"), 
-                      to = c(  "bbox", "bbox"))
+blist <- data.frame(from = c("is_Amazon" , "price_gap_ratio" , "price_gap_ratio"  , "price_gap_ratio"         ), 
+                      to = c("price_gap_ratio" ,"is_Amazon" ,  "sid_pos_fb" ,   "rank"              )  )
 
-blist <- data.frame(from = c("rank" , "price_gap_ratio" , "sid_pos_fb" , "bbox"), 
-                      to = c("is_Amazon" , "is_Amazon", "is_Amazon" , "rank"))
-
-
+              #      , whitelist = wlist , blacklist= blist
 
 # Hill Climbing
-dag_hc = hc(train , whitelist = wlist , blacklist= blist)
+dag_hc = hc(train ,whitelist = wlist , blacklist= blist)
 graphviz.plot(dag_hc)
 score(dag_hc, train, type = "aic")
 score(dag_hc,train, type = "bde")
@@ -89,7 +89,7 @@ graphviz.plot(averaged.network(arcs),layout="fdp")
 #a
 
 dag_hc
-dag <-model2network("[is_Amazon][price_gap_ratio|is_Amazon][rank|is_Amazon:price_gap_ratio][sid_pos_fb|is_Amazon:price_gap_ratio:rank][bbox|is_Amazon:price_gap_ratio:sid_pos_fb]")
+dag <-model2network("[is_Amazon][sid_pos_fb|is_Amazon][rank|is_Amazon:sid_pos_fb][price_gap_ratio|sid_pos_fb:rank][bbox|is_Amazon:price_gap_ratio:sid_pos_fb:rank]")
 graphviz.plot(dag)
 
 

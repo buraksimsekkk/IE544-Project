@@ -8,7 +8,7 @@ data = add_column(data, rawdata[,2], .after = 1)
 data = add_column(data, rawdata[,3], .after = 2)
 data$epoc = as.Date(as.character(data$epoc))
 
-train = data %>% select(is_Amazon,price_gap_ratio  , sid_pos_fb, rank ,  bbox )
+train = data %>% select(is_Amazon,price_gap_ratio  , sid_pos_fb,  bbox )
 
 
 #colnames(data)
@@ -22,23 +22,23 @@ train$price_gap_ratio<- cut(train$price_gap_ratio,
                        right = TRUE )
 
 train$sid_pos_fb<- cut(train$sid_pos_fb,
-                            breaks = c(0, 7, 8, 9, 9.2, 9.4, 9.6, 9.7, 9.8, 9.9, 10 ), 
+                            breaks = c(0, 7, 8, 9, 9.2, 9.4, 9.6, 9.8, 10 ), 
                             include.lowest = TRUE,
                             right = TRUE )
 
 
+colnames(train)
 
+wlist <- data.frame(from = c( "is_Amazon" ), 
+                      to = c( "bbox" )   )
 
-wlist <- data.frame(from = c( "price_gap_ratio","is_Amazon"), 
-                      to = c(  "bbox", "bbox"))
+blist <- data.frame(from = c( "price_gap_ratio"), 
+                      to = c( "is_Amazon" )  )
 
-blist <- data.frame(from = c("rank" , "price_gap_ratio" , "sid_pos_fb" , "bbox"), 
-                      to = c("is_Amazon" , "is_Amazon", "is_Amazon" , "rank"))
-
-
+              #      , whitelist = wlist , blacklist= blist
 
 # Hill Climbing
-dag_hc = hc(train , whitelist = wlist , blacklist= blist)
+dag_hc = hc(train , whitelist = wlist, blacklist= blist )
 graphviz.plot(dag_hc)
 score(dag_hc, train, type = "aic")
 score(dag_hc,train, type = "bde")
@@ -89,7 +89,7 @@ graphviz.plot(averaged.network(arcs),layout="fdp")
 #a
 
 dag_hc
-dag <-model2network("[is_Amazon][price_gap_ratio|is_Amazon][rank|is_Amazon:price_gap_ratio][sid_pos_fb|is_Amazon:price_gap_ratio:rank][bbox|is_Amazon:price_gap_ratio:sid_pos_fb]")
+dag <-model2network("[price_gap_ratio][sid_pos_fb|price_gap_ratio][is_Amazon|sid_pos_fb][bbox|is_Amazon:price_gap_ratio:sid_pos_fb]")
 graphviz.plot(dag)
 
 
@@ -112,7 +112,7 @@ XYtrain$epoc = as.Date(as.character(XYtrain$epoc))
 
 testcheck <- XYtrain %>%
   group_by(epoc,pid)%>%
-  select(pid,epoc,sid, price_gap_ratio, sid_pos_fb, rank, is_Amazon)
+  select(pid,epoc,sid, price_gap_ratio, sid_pos_fb,  is_Amazon)
 
 str(testcheck)
 testcheck$epoc <- as.factor(testcheck$epoc)
@@ -127,7 +127,7 @@ testcheck <- data.frame(testcheck)
 modified_rawdata = select(rawdata, -sid_pos_fb)
 modified_rawdata = add_column(modified_rawdata, train[,1:3])
 
-qwe <- testcheck[,4:7]
+qwe <- testcheck[,4:6]
 
 modified_rawdata$pred.bbox <-  predict(trained, node = "bbox", qwe)
 all.equal(modified_rawdata$bbox,modified_rawdata$pred.bbox) 
