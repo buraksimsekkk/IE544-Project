@@ -5,7 +5,7 @@ traindata <- readRDS("IE544_raw_data.rds")
 testdata <- readRDS("IE544_test_raw_data.rds")
 
 
-train = traindata %>% select(is_Amazon,price_gap_ratio  , sid_pos_fb, rank ,  bbox )
+train = traindata %>% select(is_Amazon,price_gap_ratio , bbox )
 
 #colnames(train)
 str(train)
@@ -16,7 +16,7 @@ train$price_gap_ratio<- cut(train$price_gap_ratio,
                        include.lowest = TRUE,
                        right = TRUE )
 
-# table(train$price_gap_ratio)
+# c(0, 0.04, 0.08, 0.12, 0.2, 0.4, 0.6, 1, 1.5, 2, 20 )
 
 
 
@@ -25,19 +25,18 @@ train$sid_pos_fb<- cut(train$sid_pos_fb,
                        breaks = c(0, 8.5, 9,  9.5,   10 ), 
                        include.lowest = TRUE,
                        right = TRUE )
-# table(train$sid_pos_fb)
 
 train$rank <- as.numeric(train$rank)
 train$rank<- cut(train$rank,
                        breaks = c(0 , 1 , 2 ,3 , 4 ,5  , 7, 9 ,12 ), 
                        include.lowest = TRUE,
                        right = TRUE )
-# table(train$rank)
 
 
 
 
-test = testdata %>% select(is_Amazon,price_gap_ratio  , sid_pos_fb, rank )
+
+test = testdata %>% select(is_Amazon,price_gap_ratio   )
 test$price_gap_ratio<- cut(test$price_gap_ratio,
                            breaks = c(0,0.01 , 0.02, 0.12, 0.2, 0.4,  1, 1.5, 2, 20 ), 
                            include.lowest = TRUE,
@@ -65,19 +64,17 @@ str(test)
 
 colnames(train)
 
-wlist <- data.frame(from = c("price_gap_ratio" , "is_Amazon" , "rank" , "sid_pos_fb" ,"is_Amazon"), 
-                      to = c( "bbox" ,"bbox" ,"bbox","bbox" ,"sid_pos_fb"     )   )
+wlist <- data.frame(from = c("price_gap_ratio" , "is_Amazon"), 
+                      to = c( "bbox" ,"bbox"    )   )
 
-blist <- data.frame(from = c( "is_Amazon" , "price_gap_ratio" , "price_gap_ratio"    ,"sid_pos_fb"  , "rank"    ,           "rank", "sid_pos_fb"  , "rank"    ) , 
-                      to = c("price_gap_ratio" ,"is_Amazon" ,  "sid_pos_fb"   , "price_gap_ratio"   ,"price_gap_ratio"  ,"sid_pos_fb"  ,"rank"  , "is_Amazon"    )  )
+blist <- data.frame(from = c( "is_Amazon" , "price_gap_ratio" ), 
+                      to = c("price_gap_ratio" ,"is_Amazon"   )  )
 
-#    , "is_Amazon" 
-#              , "sid_pos_fb"
           
 
 # Score-Based Algorithms
 # Hill Climbing
-dag_hc = hc(train , blacklist= blist  ,whitelist = wlist ) # , 
+dag_hc = hc(train  , blacklist= blist  ,whitelist = wlist) # , 
 graphviz.plot(dag_hc)
 score(dag_hc, train)
 
@@ -129,10 +126,10 @@ bn.cv(train, bn = "mmhc",  algorithm.args = list(blacklist=blist), method="hold-
 
 
 
-#bootstrapping
-arcs = boot.strength(train, R=50, algorithm = "hc", algorithm.args = list(whitelist = wlist , blacklist= blist), cpdag=TRUE)
-arcs<-arcs[(arcs$strength > 0.60) & (arcs$direction >= 0.5), ]
-graphviz.plot(averaged.network(arcs))
+# bootstrapping
+#arcs = boot.strength(train, R=50, algorithm = "hc", algorithm.args = list(whitelist = wlist , blacklist= blist), cpdag=TRUE)
+#arcs<-arcs[(arcs$strength > 0.65) & (arcs$direction >= 0.5), ]
+#graphviz.plot(averaged.network(arcs),layout="fdp")
 
 
 
@@ -141,8 +138,8 @@ graphviz.plot(averaged.network(arcs))
 
 #a
 
-dag_tabu
-dag <-model2network("[is_Amazon][price_gap_ratio][sid_pos_fb|is_Amazon][rank|is_Amazon:price_gap_ratio][bbox|is_Amazon:price_gap_ratio:sid_pos_fb:rank]")
+dag_hc
+dag <-model2network("[is_Amazon][price_gap_ratio][bbox|is_Amazon:price_gap_ratio]")
 graphviz.plot(dag)
 
 
@@ -157,12 +154,39 @@ jev = setEvidence(junction, nodes = "is_Amazon", states = "1")
 querygrain(jev, nodes = c("bbox"))
 
 
-#c - d
+XYtrain = traindata %>% select(pid,epoc,sid,  is_Amazon, bbox) 
+XYtrain = add_column(XYtrain, train[,2], .after = 3) 
+XYtrain$epoc = as.Date(as.character(XYtrain$epoc))
 
-traindata$pred_bbox <-  predict(trained, node = "bbox", train)
+
+testcheck <- XYtrain %>%
+  group_by(epoc,pid)%>%
+  select(pid,epoc,sid, is_Amazon,price_gap_ratio  )
+
+str(testcheck)
+testcheck$epoc <- as.factor(testcheck$epoc)
+testcheck$sid <- as.factor(testcheck$sid)
+testcheck$price_gap_ratio <- as.factor(testcheck$price_gap_ratio)
+testcheck$sid_pos_fb      <- as.factor(testcheck$sid_pos_fb     )
+
+str(testcheck)
+testcheck <- data.frame(testcheck)
+
+
+modified_traindata = select(traindata, -sid_pos_fb)
+modified_traindata = add_column(modified_traindata, train[,1:3])
+
+testcheck <- XYtrain[,4:5]
+
+
+str(testcheck)
+testcheck$is_Amazon <- as.factor(testcheck$is_Amazon)
+
+traindata$pred_bbox <-  predict(trained, node = "bbox", testcheck)
 all.equal(traindata$bbox,traindata$pred_bbox) 
 
 confusionMatrix(traindata$bbox,traindata$pred_bbox)
+
 
 
 
@@ -171,7 +195,9 @@ all.equal(testdata$bbox,testdata$pred_bbox )
 
 confusionMatrix(testdata$bbox,testdata$pred_bbox)
 
-#sum(is.na(testdata$pred_bbox))
+
+
+sum(is.na(test))
 
 
 

@@ -63,6 +63,9 @@ score(dag_tabu, train)
 dag_cb = gs(train, undirected = FALSE, whitelist = wlist ,blacklist= blist) # , 
 graphviz.plot(dag_cb)
 score(dag_cb, train)
+score(dag_cb, train, type = "aic")
+score(dag_cb,train, type = "bde")
+
 
 
 # Incremental Association 
@@ -84,17 +87,17 @@ str(train)
 data.frame(train)
 set.seed(100)
 
-bn.cv(train, bn = "hc", algorithm.args = list(blacklist=blist),  method="k-fold")  
-bn.cv(train, bn = "tabu", algorithm.args = list(blacklist=blist),  method="k-fold")
-bn.cv(train, bn = "gs", algorithm.args = list(blacklist=blist),  method="k-fold")
-bn.cv(train, bn = "iamb", algorithm.args = list(blacklist=blist),  method="k-fold")
-bn.cv(train, bn = "mmhc", algorithm.args = list(blacklist=blist),  method="k-fold")
+#bn.cv(train, bn = "hc", algorithm.args = list(blacklist=blist),  method="k-fold")  
+#bn.cv(train, bn = "tabu", algorithm.args = list(blacklist=blist),  method="k-fold")
+#bn.cv(train, bn = "gs", algorithm.args = list(blacklist=blist),  method="k-fold")
+#bn.cv(train, bn = "iamb", algorithm.args = list(blacklist=blist),  method="k-fold")
+#bn.cv(train, bn = "mmhc", algorithm.args = list(blacklist=blist),  method="k-fold")
 
-bn.cv(train, bn = "hc", algorithm.args = list(blacklist=blist),  method="hold-out")
-bn.cv(train, bn = "tabu", algorithm.args = list(blacklist=blist),  method="hold-out")
-bn.cv(train, bn = "gs", algorithm.args = list(blacklist=blist),  method="hold-out")
-bn.cv(train, bn = "iamb", algorithm.args = list(blacklist=blist),  method="hold-out")
-bn.cv(train, bn = "mmhc",  algorithm.args = list(blacklist=blist), method="hold-out")
+#bn.cv(train, bn = "hc", algorithm.args = list(blacklist=blist),  method="hold-out")
+#bn.cv(train, bn = "tabu", algorithm.args = list(blacklist=blist),  method="hold-out")
+#bn.cv(train, bn = "gs", algorithm.args = list(blacklist=blist),  method="hold-out")
+#bn.cv(train, bn = "iamb", algorithm.args = list(blacklist=blist),  method="hold-out")
+#bn.cv(train, bn = "mmhc",  algorithm.args = list(blacklist=blist), method="hold-out")
 
 
 
